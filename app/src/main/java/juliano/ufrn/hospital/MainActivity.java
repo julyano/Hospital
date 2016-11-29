@@ -19,14 +19,14 @@ public class MainActivity extends AppCompatActivity {
         btnLigarSensores.setOnClickListener( new View.OnClickListener(){
              @Override
              public void onClick(View view) {
-                 startService(new Intent(getBaseContext(),Sensores.class));
+                 startService(new Intent(getApplicationContext(),Sensores.class));
              }
          });
 
         btnDesligarSensores.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                stopService(new Intent(getBaseContext(), Sensores.class));
+                stopService(new Intent(getApplicationContext(), Sensores.class));
             }
         });
 
