@@ -7,8 +7,29 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonObjectRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
+import java.lang.Object;
 
 import static java.lang.Math.round;
 
@@ -30,12 +51,11 @@ public class Sensores extends Service {
             @Override
             public void run() {
                 boolean control = true;
-
-                Vector<Integer> v = new Vector<Integer>();
-                v.add(0);
-                v.add(0);
-                v.add(0);
                 int cont = 0;
+
+                int a=0,b=0,c=0;
+
+
 
                 while(control){
 
@@ -43,9 +63,9 @@ public class Sensores extends Service {
                     int nivel_glicose = new Random().nextInt((120 - 80) + 1) + 80;
                     int pressao = new Random().nextInt((120 - 80) + 1) + 80;
 
-                    v.add(0,batimentos_cardiacos);
-                    v.add(1,nivel_glicose);
-                    v.add(2,pressao);
+                    a = batimentos_cardiacos;
+                    b = nivel_glicose;
+                    c = pressao;
 
                     String bat_c = "batimentos_cardiacos = "+batimentos_cardiacos;
                     String n_glic = "nivel_glicose = "+ nivel_glicose;
@@ -62,12 +82,130 @@ public class Sensores extends Service {
 
                     if(cont == 50){
                         control = false;
+                        cont = 0;
                         Log.i("PACIENTE_MORRENDO",bat_c);
                         Log.i("PACIENTE_MORRENDO",n_glic);
                         Log.i("PACIENTE_MORRENDO",press);
                         Log.i("PACIENTE_MORRENDO",s);
                     }
                 }
+
+                String object =
+                        "{  \"contextElements\":\n" +
+                                "        [\n" +
+                                "            {\n" +
+                                "                \"id\": \"paciente720\",\n" +
+                                "                \"type\": \"Paciente\",\n" +
+                                "                \"isPattern\":\"false\",\n" +
+                                "                \"attributes\":\n" +
+                                "                    [\n" +
+                                "                        {\n" +
+                                "                            \"name\":\"nome\",\n" +
+                                "                            \"type\":\"text\",\n" +
+                                "                            \"value\":\"paciente720\"\n" +
+                                "                        },\n" +
+                                "                       {\n" +
+                                "                            \"name\": \"position\",\n" +
+                                "                            \"type\": \"geo:point\",\n" +
+                                "                            \"value\": \"-5.79448,-35.211\",\n" +
+                                "                                \"metadatas\": [\n" +
+                                "                                        { \"name\":\"location\", \"type\": \"string\", \"value\": \"WGS84\"}\n" +
+                                "                                 ]\n" +
+                                "                        },\n" +
+                                "                        {\n" +
+                                "                            \"name\":\"pressao\",\n" +
+                                "                            \"type\":\"integer\",\n" +
+                                "                            \"value\":"+a+"\"\n" +
+                                "                        },\n" +
+                                "                        {\n" +
+                                "                            \"name\":\"batimento_cardiaco\",\n" +
+                                "                            \"type\":\"integer\",\n" +
+                                "                            \"value\":"+b+"\"\n" +
+                                "                        },\n" +
+                                "                        {\n" +
+                                "                            \"name\":\"nivel_glicose\",\n" +
+                                "                            \"type\":\"integer\",\n" +
+                                "                            \"value\":"+c+"\"\n" +
+                                "                        }\n" +
+                                "\n" +
+                                "\n" +
+                                "                    ]\n" +
+                                "            }\n" +
+                                "        ],     \"updateAction\":\"UPDATE\" }\n";
+
+
+
+                String url = "http:177.20.147.208/v1/updateContext";
+                JSONTokener tok = new JSONTokener(object);
+                try {
+                    JSONObject jsObj = (JSONObject) tok.nextValue();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+
+                JsonObjectRequest jsonObjReq = null;
+                jsonObjReq = new JsonObjectRequest(Request.Method.POST,
+                        url, null,
+                        new Response.Listener<JSONObject>() {
+
+                            @Override
+                            public void onResponse(JSONObject response) {
+                                Log.i("teste", response.toString());
+                                //pDialog.hide();
+                            }
+                        }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        VolleyLog.d("teste", "Error: " + error.getMessage());
+                        //pDialog.hide();
+                    }
+                }) {
+
+                    /**
+                     * Passing some request headers
+                     * */
+                    @Override
+                    public Map<String, String> getHeaders() throws AuthFailureError {
+                        HashMap<String, String> headers = new HashMap<String, String>();
+                        headers.put("Content-Type", "application/json");
+                        return headers;
+                    }
+
+                };
+
+
+
+                /*URL url = null;
+                try {
+                    url = new URL(null);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                HttpURLConnection conn = null;
+                try {
+                    conn = (HttpURLConnection) url.openConnection();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    conn.setReadTimeout(10000);
+                    conn.setConnectTimeout(15000);
+                    conn.setRequestMethod("POST");
+                    conn.setDoInput(true);
+                    conn.setDoOutput(true);
+                    String body = "";
+                    OutputStream output = new BufferedOutputStream(conn.getOutputStream());
+                    output.write(body.getBytes());
+                    output.flush();
+                } catch (ProtocolException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    conn.disconnect();
+                }*/
             }
         }).start();
         return START_STICKY;
